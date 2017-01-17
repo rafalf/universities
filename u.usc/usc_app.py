@@ -25,23 +25,34 @@ else:
     driver = webdriver.Chrome(os.path.join(root_path, 'driver', 'chromedriver.exe'))
 
 
-def register(user_data):
+def application(user_data):
 
     school_urls = _get_urls('usc')
     if not school_urls:
         logger.info('school urls not found')
         sys.exit(1)
     else:
-        reg_url = school_urls[0][1]
+        login_url = school_urls[0][2]
 
     jsn = _load_json(os.path.join(user_data, 'user.json'))
     logger.info('Loaded json:')
     for section in jsn:
         logger.info(section)
 
-    driver.get(reg_url)
+    driver.get(login_url)
 
-    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#newUserAccount-name-title')))
+    # login
+    el = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#cas-login-field-username')))
+    el.send_keys(jsn[6]['username'])
+    driver.find_element_by_css_selector("input[type='password']").send_keys(jsn[6]['password'])
+    driver.find_element_by_css_selector("button.cas-login-sign-in-button").click()
+
+    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.cas-signout-link')))
+    logger.info('Signed in')
+
+    if not _wait_for_element_not_present('.cas-welcome-container', 2):
+        raw_input('Please start your application.')
+
 
     # Optional Your Name
     driver.find_element_by_css_selector("input[name='firstName']").send_keys(jsn[3]['name'])
@@ -111,6 +122,21 @@ def _load_json(file_):
         return json.load(hlr)
 
 
+def _wait_for_element(el, time_):
+    try:
+        return WebDriverWait(driver, time_).until(EC.presence_of_element_located((By.CSS_SELECTOR, el)))
+    except:
+        logger.info('Element {} not present.'.format(el))
+
+
+def _wait_for_element_not_present(el, time_):
+    try:
+        WebDriverWait(driver, time_).until_not(EC.presence_of_element_located((By.CSS_SELECTOR, el)))
+        return True
+    except:
+        logger.info('Element {} present.'.format(el))
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -121,5 +147,5 @@ if __name__ == '__main__':
     parse = arg_dict['parse']
 
     set_logger()
-    register(parse)
+    application(parse)
     driver.quit()
