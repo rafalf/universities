@@ -105,7 +105,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--parse", help="echo the string you use here", required=True)
     args = parser.parse_args()
+    arg_dict = vars(args)
+
+    parse = arg_dict['parse']
 
     set_logger()
-    register()
+    register(parse)
     driver.quit()
