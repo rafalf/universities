@@ -1,5 +1,5 @@
 .pyc
 .idea
 .DS_Store
-univ.csv
 *.config
+urls.csv
