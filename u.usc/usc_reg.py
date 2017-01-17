@@ -15,6 +15,11 @@ import getopt
 import csv
 import json
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--parse", help="echo the string you use here", required=True)
+args = parser.parse_args()
+arg_dict = vars(args)
+parse = arg_dict['parse']
 
 logger = logging.getLogger('u.usc')
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -76,14 +81,14 @@ def register(user_data):
         submit_button.click()
         WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.cas-saved-successfully-modal')))
         logger.info('Form submitted successfully!')
-        raw_input('Please press any key to close the script ...')
+        input('Please press any key to close the script ...')
     else:
         logger.info('Form not completely filled in.')
-        raw_input('Please correct the form and press any key to submit!')
+        input('Please correct the form and press any key to submit!')
         if submit_button.is_enabled():
             submit_button.click()
         else:
-            raw_input('The form still not correct. Correct the form and click on the submit button')
+            input('The form still not correct. Correct the form and click on the submit button')
 
 
 def set_logger():
@@ -112,13 +117,6 @@ def _load_json(file_):
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--parse", help="echo the string you use here", required=True)
-    args = parser.parse_args()
-    arg_dict = vars(args)
-
-    parse = arg_dict['parse']
 
     set_logger()
     register(parse)

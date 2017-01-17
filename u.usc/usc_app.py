@@ -15,6 +15,11 @@ import getopt
 import csv
 import json
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--parse", help="echo the string you use here", required=True)
+args = parser.parse_args()
+arg_dict = vars(args)
+parse = arg_dict['parse']
 
 logger = logging.getLogger('u.usc')
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -26,6 +31,8 @@ else:
 
 
 def application(user_data):
+
+    manual_page = []
 
     school_urls = _get_urls('usc')
     if not school_urls:
@@ -51,50 +58,123 @@ def application(user_data):
     logger.info('Signed in')
 
     if not _wait_for_element_not_present('.cas-welcome-container', 2):
-        raw_input('Please start your application.')
+        input('Please start your application.')
+
+    # ______________
+    # FORMS
+    # ______________
+
+    # BIO
+    logger.info('Bio form')
+    bio_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/biographicInfo'
+    driver.get(bio_info)
+    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '[name="biographicInfoForm"]')))
+
+    wait_for_angular()
+
+    # Birth Information
+    dob = jsn[3]['dob'].split('-')
+    dob_ = "{}/{}/{}".format(dob[1], dob[2], dob[0])
+    el = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                                    'input#personalInfo-biographicInfo-birthInfo-dob')))
+    el.clear()
+    el.send_keys(dob_)
+    driver.find_element_by_css_selector("input#personalInfo-birthInfo-city").send_keys(jsn[3]['citybirth'])
+
+    # Country:
+    country_ = jsn[3]['countrybirth']
+    select = Select(driver.find_element_by_css_selector("select#personalInfo-biographicInfo-birthInfo-country"))
+    select.select_by_visible_text(country_)
+
+    wait_for_angular()
+
+    # State
+    state_locator = "select#personalInfo-biographicInfo-birthInfo-state"
+    el_state = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, state_locator)))
+    select = Select(el_state)
+    select.select_by_value('3903')
+
+    wait_for_angular()
+
+    county_locator = "select#personalInfo-biographicInfo-birthInfo-county"
+    el_county = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
+    select = Select(el_county)
+    select.select_by_value('5383')
+
+    gender = jsn[3]['gendre']
+    if gender == 'Male':
+        driver.find_element_by_css_selector("div#personalInfo-biographicInfo-gender-gender-male").click()
+    else:
+        driver.find_element_by_css_selector("div#personalInfo-biographicInfo-gender-gender-female").click()
+
+    wait_for_angular()
+
+    submit_form()
+
+    # CONTACT INFO
+    logger.info('Contact info form')
+    contact_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/contactInfo'
+    driver.get(contact_info)
+    wait_for_angular()
+
+    # permanent
+    driver.find_element_by_css_selector("div#personalInfo-birthInfo-isPermanentAddress-yes").click()
+
+    wait_for_angular()
 
 
-    # Optional Your Name
-    driver.find_element_by_css_selector("input[name='firstName']").send_keys(jsn[3]['name'])
-    driver.find_element_by_css_selector("input[name='middleInitial']").send_keys(jsn[3]['middle-name'])
-    driver.find_element_by_css_selector("input[name='lastName']").send_keys(jsn[3]['last-name'])
-    driver.find_element_by_css_selector("input[name='suffix']").send_keys(jsn[3]['suffix'])
-    driver.find_element_by_css_selector("input[name='displayName']").send_keys(jsn[3]['name'])
+    # RACE
+    logger.info('Race form')
+    race_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/raceAndEthnicity'
+    driver.get(race_info)
+    wait_for_angular()
 
-    # Contact Information
-    driver.find_element_by_css_selector("input[name='email']").send_keys(jsn[3]['email'])
-    driver.find_element_by_css_selector("input[name='confirmEmail']").send_keys(jsn[3]['email'])
-    driver.find_element_by_css_selector("input[name='phoneNumber']").send_keys(jsn[1]['phone1'])
-    driver.find_element_by_css_selector("input[name='alternatePhoneNumber']").send_keys(jsn[1]['phone2'])
+    county_locator = "select#cas-personalInfo-raceAndEthnicity-ethnicity-hispanicOrLatino"
+    el_county = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
+    select = Select(el_county)
+    if jsn[3]['hispanic'] == 'no':
+        select.select_by_visible_text('No')
+    else:
+        select.select_by_visible_text('Yes')
 
-    # Phone type:
+    submit_form()
 
-    # Username and password
-    driver.find_element_by_css_selector("input[name='userName']").send_keys(jsn[6]['username'])
-    driver.find_element_by_css_selector("input[name='password']").send_keys(jsn[6]['password'])
-    driver.find_element_by_css_selector("input[name='confirmPassword']").send_keys(jsn[6]['password'])
 
-    # security
-    select = Select(driver.find_element_by_css_selector("select[name='securityQuestions']"))
-    select.select_by_visible_text('What is your favorite color?')
-    driver.find_element_by_css_selector("input[name='securityAnswer']").send_keys('black')
 
-    driver.find_element_by_css_selector("#cas-newUserAccount-termsAndConditions-agreement>div").click()
+
+    # MANUAL PAGES
+    citizen_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/citizenshipInfo'
+    manual_page.append(citizen_info)
+
+
+def wait_for_angular():
+    driver.set_script_timeout(10)
+    driver.execute_async_script("""
+        callback = arguments[arguments.length - 1];
+        angular.element('html').injector().get('$browser').notifyWhenNoOutstandingRequests(callback);""")
+
+
+def submit_form():
 
     # Submit form
     submit_button = driver.find_element_by_css_selector("button[type='submit']")
     if submit_button.is_enabled():
         submit_button.click()
-        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.cas-saved-successfully-modal')))
+        wait_for_angular()
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.cas-saved-successfully-modal')))
+
+        # close alert
+        el = driver.find_element_by_css_selector('.cas-icon-button-close')
+        el.click()
+        wait_for_angular()
         logger.info('Form submitted successfully!')
-        raw_input('Please press any key to close the script ...')
     else:
         logger.info('Form not completely filled in.')
-        raw_input('Please correct the form and press any key to submit!')
+        input('Please correct the form and press any key to submit!')
         if submit_button.is_enabled():
             submit_button.click()
         else:
-            raw_input('The form still not correct. Correct the form and click on the submit button')
+            input('The form still not correct. Correct the form and click on the submit button')
 
 
 def set_logger():
@@ -139,12 +219,6 @@ def _wait_for_element_not_present(el, time_):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--parse", help="echo the string you use here", required=True)
-    args = parser.parse_args()
-    arg_dict = vars(args)
-
-    parse = arg_dict['parse']
 
     set_logger()
     application(parse)
