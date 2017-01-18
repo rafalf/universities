@@ -16,10 +16,12 @@ import csv
 import json
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--parse", help="echo the string you use here", required=True)
+parser.add_argument("--parse", help="parse the user data folder", required=True)
+parser.add_argument("--debug", help="test mode. throws exceptions", action='store_true')
 args = parser.parse_args()
 arg_dict = vars(args)
 parse = arg_dict['parse']
+debug = arg_dict['debug']
 
 logger = logging.getLogger('u.usc')
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -44,51 +46,64 @@ def register(user_data):
     for section in jsn:
         logger.info(section)
 
-    driver.get(reg_url)
+    try:
+        driver.get(reg_url)
+        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#newUserAccount-name-title')))
 
-    WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#newUserAccount-name-title')))
+        # Optional Your Name
+        driver.find_element_by_css_selector("input[name='firstName']").send_keys(jsn[3]['name'])
+        driver.find_element_by_css_selector("input[name='middleInitial']").send_keys(jsn[3]['middle-name'])
+        driver.find_element_by_css_selector("input[name='lastName']").send_keys(jsn[3]['last-name'])
+        driver.find_element_by_css_selector("input[name='suffix']").send_keys(jsn[3]['suffix'])
+        driver.find_element_by_css_selector("input[name='displayName']").send_keys(jsn[3]['name'])
 
-    # Optional Your Name
-    driver.find_element_by_css_selector("input[name='firstName']").send_keys(jsn[3]['name'])
-    driver.find_element_by_css_selector("input[name='middleInitial']").send_keys(jsn[3]['middle-name'])
-    driver.find_element_by_css_selector("input[name='lastName']").send_keys(jsn[3]['last-name'])
-    driver.find_element_by_css_selector("input[name='suffix']").send_keys(jsn[3]['suffix'])
-    driver.find_element_by_css_selector("input[name='displayName']").send_keys(jsn[3]['name'])
+        # Contact Information
+        driver.find_element_by_css_selector("input[name='email']").send_keys(jsn[3]['email'])
+        driver.find_element_by_css_selector("input[name='confirmEmail']").send_keys(jsn[3]['email'])
+        driver.find_element_by_css_selector("input[name='phoneNumber']").send_keys(jsn[1]['phone1'])
+        driver.find_element_by_css_selector("input[name='alternatePhoneNumber']").send_keys(jsn[1]['phone2'])
 
-    # Contact Information
-    driver.find_element_by_css_selector("input[name='email']").send_keys(jsn[3]['email'])
-    driver.find_element_by_css_selector("input[name='confirmEmail']").send_keys(jsn[3]['email'])
-    driver.find_element_by_css_selector("input[name='phoneNumber']").send_keys(jsn[1]['phone1'])
-    driver.find_element_by_css_selector("input[name='alternatePhoneNumber']").send_keys(jsn[1]['phone2'])
+        # Phone type:
 
-    # Phone type:
+        # Username and password
+        driver.find_element_by_css_selector("input[name='userName']").send_keys(jsn[6]['username'])
+        driver.find_element_by_css_selector("input[name='password']").send_keys(jsn[6]['password'])
+        driver.find_element_by_css_selector("input[name='confirmPassword']").send_keys(jsn[6]['password'])
 
-    # Username and password
-    driver.find_element_by_css_selector("input[name='userName']").send_keys(jsn[6]['username'])
-    driver.find_element_by_css_selector("input[name='password']").send_keys(jsn[6]['password'])
-    driver.find_element_by_css_selector("input[name='confirmPassword']").send_keys(jsn[6]['password'])
+        # security
+        select = Select(driver.find_element_by_css_selector("select[name='securityQuestions']"))
+        select.select_by_visible_text('What is your favorite color?')
+        driver.find_element_by_css_selector("input[name='securityAnswer']").send_keys('black')
 
-    # security
-    select = Select(driver.find_element_by_css_selector("select[name='securityQuestions']"))
-    select.select_by_visible_text('What is your favorite color?')
-    driver.find_element_by_css_selector("input[name='securityAnswer']").send_keys('black')
+        driver.find_element_by_css_selector("#cas-newUserAccount-termsAndConditions-agreement>div").click()
 
-    driver.find_element_by_css_selector("#cas-newUserAccount-termsAndConditions-agreement>div").click()
+    except:
+        logger.info('an error happened while filling this form.', exc_info=debug)
+        raw_input("Please manually correct it and submit it."
+              "\nThen press ENTER to continue ... ")
 
     # Submit form
     submit_button = driver.find_element_by_css_selector("button[type='submit']")
     if submit_button.is_enabled():
         submit_button.click()
+        wait_for_angular()
         WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '.cas-saved-successfully-modal')))
         logger.info('Form submitted successfully!')
-        input('Please press any key to close the script ...')
+        raw_input('Please press ENTER to exit ...')
     else:
         logger.info('Form not completely filled in.')
-        input('Please correct the form and press any key to submit!')
+        raw_input('Please correct the form and press ENTER to submit!')
         if submit_button.is_enabled():
             submit_button.click()
         else:
-            input('The form still not correct. Correct the form and click on the submit button')
+            raw_input('The form still not correct. Correct the form and click on the submit button')
+
+
+def wait_for_angular():
+    driver.set_script_timeout(10)
+    driver.execute_async_script("""
+        callback = arguments[arguments.length - 1];
+        angular.element('html').injector().get('$browser').notifyWhenNoOutstandingRequests(callback);""")
 
 
 def set_logger():
