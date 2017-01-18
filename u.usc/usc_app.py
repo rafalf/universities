@@ -34,7 +34,7 @@ def application(user_data):
 
     manual_page = []
 
-    school_urls = _get_urls('usc')
+    school_urls = _get_urls('usc-1')
     if not school_urls:
         logger.info('school urls not found')
         sys.exit(1)
@@ -63,11 +63,14 @@ def application(user_data):
     # ______________
     # FORMS
     # ______________
+    # PERSONAL INFORMATION PAGES
+
+
+    school_urls = _get_urls('usc-personal')
 
     # BIO
     logger.info('Bio form')
-    bio_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/biographicInfo'
-    driver.get(bio_info)
+    driver.get(school_urls[0][1])
     WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '[name="biographicInfoForm"]')))
 
     wait_for_angular()
@@ -113,8 +116,7 @@ def application(user_data):
 
     # CONTACT INFO
     logger.info('Contact info form')
-    contact_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/contactInfo'
-    driver.get(contact_info)
+    driver.get(driver.get(school_urls[0][2]))
     wait_for_angular()
 
     # permanent
@@ -125,8 +127,7 @@ def application(user_data):
 
     # RACE
     logger.info('Race form')
-    race_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/raceAndEthnicity'
-    driver.get(race_info)
+    driver.get(driver.get(school_urls[0][3]))
     wait_for_angular()
 
     county_locator = "select#cas-personalInfo-raceAndEthnicity-ethnicity-hispanicOrLatino"
@@ -141,10 +142,36 @@ def application(user_data):
 
 
 
+    # _______________________
+    # SUPPORTING INFORMATION
 
-    # MANUAL PAGES
-    citizen_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/citizenshipInfo'
-    manual_page.append(citizen_info)
+    school_urls = _get_urls('usc-supporting')
+
+    'https://usc.liaisoncas.com/applicant-ux/#/supportingInfo/experiences'
+
+    logger.info('Experience form')
+    bio_info = 'https://usc.liaisoncas.com/applicant-ux/#/personalInfo/biographicInfo'
+    driver.get(bio_info)
+
+    wait_for_angular()
+
+    if jsn[2]['current_emp_company_name']:
+        company_name = jsn[2]['current_emp_company_name']
+        company_type = jsn[2]['current_emp_type']
+        company_emp_nature = jsn[2]['current_emp_nature']
+        company_end_date = jsn[2]['current_emp_end_date']
+        company_position = jsn[2]['current_emp_position']
+        company_start_date = jsn[2]['current_emp_start_date']
+
+    exp_type = 'select#supportingInfo-experiences-experience-type'
+    el_experience = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, exp_type)))
+    select = Select(el_experience)
+    select.deselect_by_visible_text('Employment')
+
+    driver.find_element_by_css_selector("[name='orgName']").send_keys(company_name)
+
+    current_exp = '#supportingInfo-experiences-experience-employmentDates-yes'
+    driver.find_element_by_css_selector(current_exp).click()
 
 
 def wait_for_angular():
