@@ -220,6 +220,9 @@ def application(user_data):
 
     school_urls = _get_urls('usc-supporting')
 
+    # EXPERIENCE
+    # *******************************
+
     logger.info('Experience form')
 
     try:
@@ -231,9 +234,9 @@ def application(user_data):
             company_name = jsn[2]['current_emp_company_name']
             company_type = jsn[2]['current_emp_type']
             company_emp_nature = jsn[2]['current_emp_nature']
-            company_end_date = jsn[2]['current_emp_end_date']
             company_position = jsn[2]['current_emp_position']
-            company_start_date = jsn[2]['current_emp_start_date']
+            company_end_date = _parse_date(jsn[2]['current_emp_end_date'])
+            company_start_date = _parse_date(jsn[2]['current_emp_start_date'])
 
             logger.info('Adding experience')
 
@@ -262,14 +265,51 @@ def application(user_data):
                 wait_for_angular()
 
                 # start date
-                start_date = _parse_date(company_start_date)
                 start_data_locator = 'input#supportingInfo-experiences-experience-employmentDates-startDate'
                 el = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, start_data_locator)))
                 el.clear()
-                el.send_keys(start_date)
+                el.send_keys(company_start_date)
+
+                wait_for_angular()
+
+                # contact company
+                current_exp = '#supportingInfo-experiences-experience-employmentDetails-yes'
+                driver.find_element_by_css_selector(current_exp).click()
+
+                # end date
+                # start_data_locator = 'input#supportingInfo-experiences-experience-employmentDates-endDate'
+                # el = WebDriverWait(driver, 5).until(
+                #     EC.presence_of_element_located((By.CSS_SELECTOR, start_data_locator)))
+                # el.clear()
+                # el.send_keys(company_end_date)
+
+                wait_for_angular()
+
+                el_name = driver.find_element_by_css_selector("[name='jobTitle']")
+                el_name.clear()
+                el_name.send_keys(company_position)
+
+                # type
+                visible_text = None
+                if company_type.count('Full'):
+                    visible_text = 'Full time'
+                elif company_type.count('Part'):
+                    visible_text = 'Part time'
+                elif company_type.count('Temp'):
+                    visible_text = 'Temporary'
+
+                if visible_text:
+                    exp_type = 'select#supportingInfo-experiences-experience-employmentDates-status'
+                    el_experience = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, exp_type)))
+                    select = Select(el_experience)
+                    select.select_by_visible_text(visible_text)
+                    wait_for_angular()
+                else:
+                    logger.info('Status not provided')
+
 
         else:
-            logger.info('I am not adding any experience')
+            logger.info('I am not adding any experience. Opt out')
 
             el = _wait_for_element('.cas-experiences-opted-out button')
             el.click()
@@ -281,6 +321,149 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
+
+
+    # ACHIEVEMENT
+    # *******************************
+
+    logger.info('Achievement form')
+
+    try:
+        driver.get(school_urls[0][2])
+
+        wait_for_angular()
+
+        if _wait_for_element('.cas-opted-out-background', 1):
+            logger.info('Achievement already added')
+        else:
+            logger.info('I am not adding any achievements')
+
+            el = _wait_for_element('.cas-achievements-opt-out-button-container button')
+            if el:
+                el.click()
+
+            if _wait_for_element('.cas-opted-out-background'):
+                logger.info('Form completed')
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # CONFERENCES
+    # *******************************
+
+    logger.info('Conferences attended form')
+
+    try:
+        driver.get(school_urls[0][3])
+
+        wait_for_angular()
+
+        if _wait_for_element('.cas-opted-out-background', 1):
+            logger.info('Conferences already opted out')
+        else:
+            logger.info('I am not adding any conferences. Opt out')
+
+            el = _wait_for_element('.cas-conferences-attended-opt-out-button-container button')
+            if el:
+                el.click()
+
+            if _wait_for_element('.cas-opted-out-background'):
+                logger.info('Form completed')
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # MEMBERSHIPS
+    # *******************************
+
+    logger.info('Membership attended form')
+
+    try:
+        driver.get(school_urls[0][4])
+
+        wait_for_angular()
+
+        if _wait_for_element('.cas-opted-out-background', 1):
+            logger.info('Memberships already opted out')
+        else:
+            logger.info('I am not adding any memberships. Opt out')
+
+            el = _wait_for_element('.cas-memberships-opt-out-button-container button')
+            if el:
+                el.click()
+
+            if _wait_for_element('.cas-opted-out-background'):
+                logger.info('Form completed')
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # DOCUMENTS (CV)
+    # *******************************
+
+    logger.info('Documents form')
+
+    try:
+        driver.get(school_urls[0][5])
+
+        wait_for_angular()
+
+        resume = jsn[6]['resume_file_name']
+
+        if _wait_for_element('.cas-complete', 0.5):
+            logger.info('Uploaded already')
+
+        elif resume:
+            list_content = os.listdir(parse)
+            if not resume in list_content:
+                logger.info('Resume: {} doesnot exist in parsed folder'.format(resume))
+            else:
+                resume_file = os.path.join(parse, resume)
+
+                el = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((
+                    By.CSS_SELECTOR, '.cas-documents-list li:nth-of-type(1) button')))
+                el.click()
+
+                wait_for_angular()
+
+                el = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR, 'input.cas-file-input')))
+                el.send_keys(resume_file)
+
+                # save document
+                wait_for_angular()
+                el = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((
+                    By.CSS_SELECTOR, 'button.cas-subsection-form-save-button')))
+                el.click()
+
+                wait_for_angular()
+
+                if not _wait_for_element_not_present('.cas-system-error-message', 2):
+                    logger.info('Error uploading csv...')
+                    raise
+                elif not _wait_for_element('.cas-complete', 2):
+                    logger.info('Uploading csv failed ?...')
+                    raise
+
+                logger.info('Resume: {} added'.format(resume_file))
+        else:
+            logger.info('No resume to upload!')
+
+        logger.info('Form completed')
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
 
 
 def wait_for_angular():
