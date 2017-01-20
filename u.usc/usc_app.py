@@ -29,7 +29,7 @@ if plat == 'darwin': # OSX
     driver = webdriver.Chrome()
 else:
     driver = webdriver.Chrome(os.path.join(root_path, 'driver', 'chromedriver.exe'))
-
+driver.maximize_window()
 
 def application(user_data):
 
