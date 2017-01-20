@@ -77,13 +77,16 @@ def application(user_data):
 
     try:
         driver.get(school_urls[0][1])
-        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, '[name="biographicInfoForm"]')))
+        logger.info('Page url: {}'.format(school_urls[0][1]))
 
         wait_for_angular()
 
+        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '[name="biographicInfoForm"]')))
+
+
         # Birth Information
         dob_ = _parse_date(jsn[3]['dob'])
-        el = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR,
+        el = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR,
                                                                         'input#personalInfo-biographicInfo-birthInfo-dob')))
         el.clear()
         el.send_keys(dob_)
@@ -102,14 +105,14 @@ def application(user_data):
 
         # State
         state_locator = "select#personalInfo-biographicInfo-birthInfo-state"
-        el_state = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, state_locator)))
+        el_state = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, state_locator)))
         select = Select(el_state)
         select.select_by_visible_text('Other/Unknown')
 
         wait_for_angular()
 
         county_locator = "select#personalInfo-biographicInfo-birthInfo-county"
-        el_county = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
+        el_county = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
         select = Select(el_county)
         select.select_by_visible_text('N/A')
 
@@ -135,6 +138,7 @@ def application(user_data):
 
     try:
         driver.get(school_urls[0][2])
+        logger.info('Page url: {}'.format(school_urls[0][2]))
         wait_for_angular()
 
         address_1 = jsn[1]['current_mail']
@@ -190,16 +194,32 @@ def application(user_data):
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
 
+    # CITIZEN INFO
+    # *******************************
+    logger.info('Citizen info form')
+
+    try:
+        driver.get(school_urls[0][3])
+        logger.info('Page url: {}'.format(school_urls[0][3]))
+        wait_for_angular()
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
     # RACE
     # *******************************
     logger.info('Race form')
 
     try:
-        driver.get(school_urls[0][3])
+        driver.get(school_urls[0][4])
+        logger.info('Page url: {}'.format(school_urls[0][4]))
         wait_for_angular()
 
         county_locator = "select#cas-personalInfo-raceAndEthnicity-ethnicity-hispanicOrLatino"
-        el_county = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
+        el_county = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
         select = Select(el_county)
         if jsn[3]['hispanic'] == 'no':
             select.select_by_visible_text('No')
@@ -214,6 +234,21 @@ def application(user_data):
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
 
+    # OTHER INFO
+    # *******************************
+    logger.info('Citizen info form')
+
+    try:
+        driver.get(school_urls[0][5])
+        logger.info('Page url: {}'.format(school_urls[0][5]))
+
+        wait_for_angular()
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
 
     # _______________________
     # SUPPORTING INFORMATION
