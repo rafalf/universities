@@ -33,8 +33,6 @@ else:
 
 def application(user_data):
 
-    manual_page = []
-
     school_urls = _get_urls('usc-1')
     if not school_urls:
         logger.info('school urls not found')
@@ -82,7 +80,6 @@ def application(user_data):
         wait_for_angular()
 
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '[name="biographicInfoForm"]')))
-
 
         # Birth Information
         dob_ = _parse_date(jsn[3]['dob'])
@@ -242,7 +239,6 @@ def application(user_data):
 
         submit_form()
 
-
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
         raw_input("Please manually fill out this form and submit it."
@@ -306,6 +302,9 @@ def application(user_data):
 
         wait_for_angular()
 
+        # we might need to test out what is json and
+        # if it fits in Select , because now it causes this form to fail
+
         if another_lang:
             add_button = 'button.cas-primary-button-small-add'
             WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, add_button))).click()
@@ -320,13 +319,63 @@ def application(user_data):
 
             wait_for_angular()
 
-            another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
-            el_prof_another = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
-            select = Select(el_prof_another)
-            select.select_by_visible_text(another_prof)
+        # we might need to test out what is json and
+        # if it fits in Select , because now it causes this form to fail
+
+        #
+        #     another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
+        #     el_prof_another = WebDriverWait(driver, 5).until(
+        #         EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
+        #     select = Select(el_prof_another)
+        #     select.select_by_visible_text(another_prof)
+        #
+        #     wait_for_angular()
+
+        family_usc = jsn[6]['Did your parents or siblings attend USC?']
+        first_to_college = jsn[6]['Are you the first-generation in your family to go to college?']
+        employed_usc = jsn[6]['Are your parents or spouse employed at USC?']
+        apply_dual = jsn[6]['Are you applying for a dual degree at USC?']
+        apply_before = jsn[6]['Have you previously applied to or attended USC?']
+        sponsorship = jsn[6]['Have you applied for, received, or are planning to apply for a financial' \
+                             ' sponsorship from your employer?']
+
+        radios = []
+        if family_usc.lower() == 'yes':
+            radios.append("div#cas-program-questions-251727-577861>div")
+        elif family_usc.lower() == 'no':
+            radios.append("div#cas-program-questions-251727-577862>div")
+
+        if first_to_college.lower() == 'yes':
+            radios.append("div#cas-program-questions-251728-577863>div")
+        elif first_to_college.lower() == 'no':
+            radios.append("div#cas-program-questions-251728-577864>div")
+
+        if employed_usc.lower() == 'yes':
+            radios.append("div#cas-program-questions-251729-577865>div")
+        elif employed_usc.lower() == 'no':
+            radios.append("div#cas-program-questions-251729-577866>div")
+
+        if apply_dual.lower() == 'yes':
+            radios.append("div#cas-program-questions-251730-577867>div")
+        elif apply_dual.lower() == 'no':
+            radios.append("div#cas-program-questions-251730-577868>div")
+
+        if apply_before.lower() == 'yes':
+            radios.append("div#cas-program-questions-251731-577869>div")
+        elif apply_before.lower() == 'no':
+            radios.append("div#cas-program-questions-251731-577870>div")
+
+        # employer
+        if sponsorship.lower() == 'yes':
+            radios.append("div#cas-program-questions-251737-577896>div")
+        elif sponsorship.lower() == 'no':
+            radios.append("div#cas-program-questions-251737-577897>div")
+
+        for radio in radios:
+            WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, radio))).click()
 
         submit_form()
+
 
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
@@ -377,11 +426,20 @@ def application(user_data):
                 driver.find_element_by_css_selector(current_exp).click()
 
                 # country - your current address country
-                exp_type = 'select#supportingInfo-experiences-experience-organization-orgCountry'
-                el_experience = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, exp_type)))
+                exp_country = 'select#supportingInfo-experiences-experience-organization-orgCountry'
+                el_experience = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, exp_country)))
                 select = Select(el_experience)
                 select.select_by_visible_text(country)
                 wait_for_angular()
+
+                # state
+                if country != 'United States':
+                    exp_state = 'div[label="State"] select'
+                    el_experience = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, exp_state)))
+                    select = Select(el_experience)
+                    select.select_by_visible_text('Other/Unknown')
+                    wait_for_angular()
 
                 # start date
                 start_data_locator = 'input#supportingInfo-experiences-experience-employmentDates-startDate'
@@ -581,6 +639,8 @@ def application(user_data):
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
 
+    raw_input("We went through all forms. \n"
+              "Please review all forms and press ENTER to stop the script")
 
 def wait_for_angular():
     driver.set_script_timeout(10)
@@ -637,6 +697,7 @@ def _parse_date(date_):
     d = date_.split('-')
     return "{}/{}/{}".format(d[1], d[2], d[0])
 
+
 def _get_urls(school):
     with open(os.path.join(root_path, 'urls.csv'), 'rb') as hlr:
         rd = csv.reader(hlr, delimiter=',', quotechar='"')
@@ -663,9 +724,10 @@ def _wait_for_element_not_present(el, time_):
         logger.info('Element {} present.'.format(el))
 
 
+
+
+
 if __name__ == '__main__':
-
-
     set_logger()
     application(parse)
     driver.quit()
