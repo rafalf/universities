@@ -203,6 +203,46 @@ def application(user_data):
         logger.info('Page url: {}'.format(school_urls[0][3]))
         wait_for_angular()
 
+        logger.info('Citizenship Details to fill out manually')
+
+        # State of Residence
+        state_resident = jsn[3]['legal_state_resident']
+        state_locator = "select#personalInfo-citizenshipInfo-residencyInfo-legalState"
+        el_state = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, state_locator)))
+        select = Select(el_state)
+        select.select_by_visible_text(state_resident)
+
+        wait_for_angular()
+
+        # County
+        if state_resident in ['International', 'Other/Unknown']:
+            legal_county_resident = 'N/A'
+        else:
+            legal_county_resident = jsn[3]['legal_county_resident']
+
+        county_locator = "select#personalInfo-citizenshipInfo-residencyInfo-legalCounty"
+        el_county = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, county_locator)))
+        select = Select(el_county)
+        select.select_by_visible_text(legal_county_resident)
+
+        wait_for_angular()
+
+        # Visa
+        if jsn[6]['usa_visa'].lower() == 'yes':
+            visa = 'div#personalInfo-citizenshipInfo-visaInfo-holder-yes'
+        elif jsn[6]['usa_visa'].lower() == 'no':
+            visa = 'div#personalInfo-citizenshipInfo-visaInfo-holder-no'
+        else:
+            logger.info('Visa unrecognized')
+            visa = None
+        if visa:
+            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, visa))).click()
+
+        wait_for_angular()
+
+        submit_form()
+
+
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
         raw_input("Please manually fill out this form and submit it."
@@ -243,6 +283,50 @@ def application(user_data):
         logger.info('Page url: {}'.format(school_urls[0][5]))
 
         wait_for_angular()
+
+        # native language
+        if jsn[5]['language1_prof'].lower() == 'native':
+            native_lang = jsn[5]['language1']
+        elif jsn[5]['language2_prof'].lower() == 'native':
+            native_lang = jsn[5]['language2']
+
+        # another
+        another_lang = None
+        if jsn[5]['language1_prof'].lower() != 'native':
+            another_lang = jsn[5]['language1']
+            another_prof = jsn[5]['language1_prof']
+        elif jsn[5]['language2_prof'].lower() != 'native':
+            another_lang = jsn[5]['language2']
+            another_prof = jsn[5]['language2_prof']
+
+        native_locator = "select#personalInfo-otherInfo-languageProficiency-nativeLanguage"
+        el_native = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, native_locator)))
+        select = Select(el_native)
+        select.select_by_visible_text(native_lang)
+
+        wait_for_angular()
+
+        if another_lang:
+            add_button = 'button.cas-primary-button-small-add'
+            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, add_button))).click()
+
+            wait_for_angular()
+
+            another_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
+            el_another = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, another_locator)))
+            select = Select(el_another)
+            select.select_by_visible_text(another_lang)
+
+            wait_for_angular()
+
+            another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
+            el_prof_another = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
+            select = Select(el_prof_another)
+            select.select_by_visible_text(another_prof)
+
+        submit_form()
 
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
@@ -341,8 +425,6 @@ def application(user_data):
                     wait_for_angular()
                 else:
                     logger.info('Status not provided')
-
-
         else:
             logger.info('I am not adding any experience. Opt out')
 
@@ -356,7 +438,6 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
-
 
     # ACHIEVEMENT
     # *******************************
