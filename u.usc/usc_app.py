@@ -31,6 +31,7 @@ else:
     driver = webdriver.Chrome(os.path.join(root_path, 'driver', 'chromedriver.exe'))
 driver.maximize_window()
 
+
 def application(user_data):
 
     school_urls = _get_urls('usc-1')
@@ -61,7 +62,6 @@ def application(user_data):
     if not _wait_for_element_not_present('.cas-welcome-container', 2):
         raw_input('Please start the application.'
               '\nOnce the application is started, press ENTER to begin with the forms.')
-
     # ______________
     # FORMS
     # ______________
@@ -120,6 +120,10 @@ def application(user_data):
             driver.find_element_by_css_selector("div#personalInfo-biographicInfo-gender-gender-female").click()
 
         wait_for_angular()
+
+        middle_name = jsn[3]['middle-name']
+        if not middle_name:
+            logger.debug('Theres no middle name')
 
         submit_form()
 
@@ -319,17 +323,15 @@ def application(user_data):
 
             wait_for_angular()
 
-        # we might need to test out what is json and
-        # if it fits in Select , because now it causes this form to fail
+            web_options = ['Beginner','Intermediate','Advanced']
+            if another_prof in web_options:
+                another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
+                el_prof_another = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
+                select = Select(el_prof_another)
+                select.select_by_visible_text(another_prof)
 
-        #
-        #     another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
-        #     el_prof_another = WebDriverWait(driver, 5).until(
-        #         EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
-        #     select = Select(el_prof_another)
-        #     select.select_by_visible_text(another_prof)
-        #
-        #     wait_for_angular()
+            wait_for_angular()
 
         family_usc = jsn[6]['Did your parents or siblings attend USC?']
         first_to_college = jsn[6]['Are you the first-generation in your family to go to college?']
@@ -338,6 +340,7 @@ def application(user_data):
         apply_before = jsn[6]['Have you previously applied to or attended USC?']
         sponsorship = jsn[6]['Have you applied for, received, or are planning to apply for a financial' \
                              ' sponsorship from your employer?']
+        competitive_award = jsn[6]['non-USC fellowship or nationally competitive award?']
 
         radios = []
         if family_usc.lower() == 'yes':
@@ -371,8 +374,29 @@ def application(user_data):
         elif sponsorship.lower() == 'no':
             radios.append("div#cas-program-questions-251737-577897>div")
 
+        # award
+        if competitive_award.lower() == 'yes':
+            radios.append("div#cas-program-questions-251734-577874>div")
+        elif competitive_award.lower() == 'no':
+            radios.append("div#cas-program-questions-251734-577875>div")
+
         for radio in radios:
             WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, radio))).click()
+
+        # Marital status
+        marital_status = jsn[3]['maritial']
+        if marital_status and marital_status.lower() == 'single':
+            marital_status = 'Single'
+        elif marital_status and marital_status.lower() == 'married':
+            marital_status = 'Married'
+        else:
+            marital_status = None
+            if not marital_status:
+                marital_locator = "select#cas-program-questions-251726"
+                el_marital = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, marital_locator)))
+                select = Select(el_marital)
+                select.select_by_visible_text(marital_status)
+
 
         submit_form()
 
@@ -639,8 +663,219 @@ def application(user_data):
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
 
+    # _______________________
+    # ACADEMIC HISTORY
+
+    school_urls = _get_urls('usc-history')
+
+    # HIGH SCHOOL ATTENDED
+    # *******************************
+
+    logger.info('High school attended form')
+
+    try:
+        driver.get(school_urls[0][1])
+
+        wait_for_angular()
+
+        highs = []
+        if jsn[0]['univ_1_degree']:
+            high_school = []
+            high_school.append(jsn[0]['univ_1_degree'])
+            high_school.append(jsn[0]['univ_state_1'])
+            high_school.append(jsn[0]['univ_name_1'])
+            high_school.append(jsn[0]['univ_city_1'])
+            highs.append(high_school)
+        if jsn[0]['univ_2_degree']:
+            high_school = []
+            high_school.append(jsn[0]['univ_2_degree'])
+            high_school.append(jsn[0]['univ_state_2'])
+            high_school.append(jsn[0]['univ_name_2'])
+            high_school.append(jsn[0]['univ_city_2'])
+            highs.append(high_school)
+        if jsn[0]['univ_3_degree']:
+            high_school = []
+            high_school.append(jsn[0]['univ_3_degree'])
+            high_school.append(jsn[0]['univ_state_3'])
+            high_school.append(jsn[0]['univ_name_3'])
+            high_school.append(jsn[0]['univ_city_3'])
+            highs.append(high_school)
+
+        if _wait_for_element('.cas-opted-out-background', 1) > 0:
+            logger.info('High school already opted out')
+
+        for h in highs:
+            logger.info('Found the following high schools: {}'.format(h))
+
+        if len(highs) > 0:
+            for h in highs:
+                raw_input('Please click on Add high schools. We\'ll add high schools now ... \n'
+                          'press ENTER when you are on the actual form: \'Add Your High School\'')
+
+                wait_for_angular()
+
+                el = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR, 'input[name="highSchoolName"]')))
+                el.send_keys(h[2])
+
+                driver.find_element_by_css_selector('[name="city"]').send_keys(h[3])
+
+                raw_input('Please fill the remaining fields and click on the Save this school button')
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # COLLEGE ATTENDED
+    # *******************************
+
+    logger.info('College attended form')
+
+    try:
+        driver.get(school_urls[0][2])
+
+        wait_for_angular()
+
+        if jsn[0]['school_name']:
+            logger.info('Found the following school: name: {}, country: {}, city: {}, graduation date: {}'.
+                        format(jsn[0]['school_name'], jsn[0]['school_country'], jsn[0]['school_city'], jsn[0]['school_grad_date']))
+
+        WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.CSS_SELECTOR, '.cas-primary-button-large-add'))).click()
+
+        wait_for_angular()
+
+        el = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.CSS_SELECTOR, 'input[name="name"]')))
+        el.send_keys(jsn[0]['school_name'])
+
+        raw_input("Please help me fill out this form ... and click Save this College\n"
+                  "Press ENTER when you are ready to move to the next form")
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+
+    # GPA ENTRIES
+    # *******************************
+
+    logger.info('GPA Entries')
+
+    try:
+        driver.get(school_urls[0][3])
+
+        wait_for_angular()
+
+        raw_input("Please help me fill out this form ...\n"
+                  "Press ENTER when you are ready to move to the next form")
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # EDUCATIONAL GAP
+    # *******************************
+
+    logger.info('Eduational Gap')
+
+    try:
+        driver.get(school_urls[0][4])
+
+        wait_for_angular()
+
+        educational_gap = jsn[6]['education_gap']
+        educational_gap_exp = jsn[6]['education_gap_explain']
+
+        web_options = ['Not applicable', 'Working', 'Traveling',
+                       'Taking care of personal matters', 'Military enrollment', 'Other']
+
+        logger.info("Found educational gap: type {}, why: {}".format(educational_gap, educational_gap_exp))
+
+        if educational_gap and educational_gap in web_options:
+
+            gap_locator = 'select#cas-custom-questions-180266'
+            el_gap = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, gap_locator)))
+            select = Select(el_gap)
+            select.select_by_visible_text(educational_gap)
+            wait_for_angular()
+
+            if educational_gap == 'Other':
+                text_area = '#cas-custom-questions-180267'
+                el_gap_text = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, text_area)))
+                el_gap_text.send_keys(educational_gap_exp)
+
+        raw_input("Please help me fill out this form, if you are happy with this form, click on Save and Continue ...\n"
+                  "Press ENTER when you are ready to move to the next form")
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
+    # TESTS
+    # *******************************
+
+    logger.info('Standardized Tests')
+
+    try:
+        driver.get(school_urls[0][5])
+
+        wait_for_angular()
+
+        logger.info("Please add the following tests:")
+        if jsn[4]['toefl_date']:
+            logger.info('Tefl: Speaking score: {}'.format(jsn[4]['toefl_speaking_score']))
+            logger.info('Tefl: Total score: {}'.format(jsn[4]['toefl_total_score']))
+            logger.info('Tefl: Writing score: {}'.format(jsn[4]['toefl_writing_score']))
+            logger.info('Tefl: Reading score: {}'.format(jsn[4]['toefl_reading_score']))
+            logger.info('Tefl: Date: {}'.format(jsn[4]['toefl_date']))
+        if jsn[4]['ielts_date']:
+            logger.info('Ielts: Listening: {}'.format(jsn[4]['ielts_listning']))
+            logger.info('Ielts: Total score: {}'.format(jsn[4]['ielts_total_score']))
+            logger.info('Ielts: Writing score: {}'.format(jsn[4]['ielts_writing_score']))
+            logger.info('Ielts: Speaking score: {}'.format(jsn[4]['ielts_speaking_score']))
+            logger.info('Ielts: Reading score: {}'.format(jsn[4]['ielts_reading_score']))
+            logger.info('Ielts: Date: {}'.format(jsn[4]['ielts_date']))
+
+        raw_input("Please ENTER to print all tests: \n")
+
+        d = jsn[4]
+        for key, value in d.iteritems():
+            logger.info('Key: {}, Value: {}'.format(key, value))
+
+            # Cannot enter ! Red light flashes !
+            # button = 'ul li:nth-of-type(5) button'
+            #
+            # if _wait_for_element(button, 1):
+            #
+            #     WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, button))).click()
+            #     wait_for_angular
+            #     toefl_date = _parse_date(jsn[4]['toefl_date'])
+            #
+            #     input_date = 'input#academicHistory-standardizedtests-addToeflTest-no-dateTaken'
+            #     el = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, input_date)))
+            #     el.send_keys(toefl_date)
+            #
+            #     save = '.cas-primary-button-large-check'
+            #     WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, save))).click()
+            #     logger.info('Tefl added')
+            # else:
+            #     logger.info('Tefl already added (?)')
+
+    except:
+        logger.info('an error happened when filling this form.', exc_info=debug)
+        raw_input("Please manually fill out this form and submit it."
+                  "\nMake sure when the form is submitted you close the successful message"
+                  "\nThen press ENTER to continue on with other forms")
+
     raw_input("We went through all forms. \n"
               "Please review all forms and press ENTER to stop the script")
+
 
 def wait_for_angular():
     driver.set_script_timeout(10)
@@ -722,9 +957,6 @@ def _wait_for_element_not_present(el, time_):
         return True
     except:
         logger.info('Element {} present.'.format(el))
-
-
-
 
 
 if __name__ == '__main__':
