@@ -842,11 +842,13 @@ def application(user_data):
             logger.info('Ielts: Reading score: {}'.format(jsn[4]['ielts_reading_score']))
             logger.info('Ielts: Date: {}'.format(jsn[4]['ielts_date']))
 
-        raw_input("Please ENTER to print all tests: \n")
+        raw_input("Please ENTER to print all data relevant to tests: \n")
 
-        d = jsn[4]
-        for key, value in d.iteritems():
+        ielts_items  = _group_relevant_items(jsn[4], 'ielts')
+        for key, value in ielts_items.iteritems():
             logger.info('Key: {}, Value: {}'.format(key, value))
+
+        ielts_items = _group_relevant_items(jsn[4], 'ielts')
 
             # Cannot enter ! Red light flashes !
             # button = 'ul li:nth-of-type(5) button'
@@ -931,6 +933,15 @@ def _parse_date(date_):
 
     d = date_.split('-')
     return "{}/{}/{}".format(d[1], d[2], d[0])
+
+
+def _group_relevant_items(section, group_by):
+
+    r = {}
+    for key, value in section.iteritems():
+        if key.count(group_by):
+            r[key] = value
+    return r
 
 
 def _get_urls(school):
