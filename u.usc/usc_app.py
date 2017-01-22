@@ -62,6 +62,9 @@ def application(user_data):
     if not _wait_for_element_not_present('.cas-welcome-container', 2):
         raw_input('Please start the application.'
               '\nOnce the application is started, press ENTER to begin with the forms.')
+
+    os.system('cls')
+
     # ______________
     # FORMS
     # ______________
@@ -133,6 +136,8 @@ def application(user_data):
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
 
+    os.system('cls')
+
     # CONTACT INFO
     # *******************************
     logger.info('Contact info form')
@@ -194,6 +199,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # CITIZEN INFO
     # *******************************
@@ -263,6 +270,8 @@ def application(user_data):
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
 
+    os.system('cls')
+
     # RACE
     # *******************************
     logger.info('Race form')
@@ -287,6 +296,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # OTHER INFO
     # *******************************
@@ -445,6 +456,8 @@ def application(user_data):
 
     school_urls = _get_urls('usc-supporting')
 
+    os.system('cls')
+
     # EXPERIENCE
     # *******************************
 
@@ -559,6 +572,8 @@ def application(user_data):
               "\nMake sure when the form is submitted you close the successful message"
               "\nThen press ENTER to continue on with other forms")
 
+    os.system('cls')
+
     # ACHIEVEMENT
     # *******************************
 
@@ -586,6 +601,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # CONFERENCES
     # *******************************
@@ -615,6 +632,8 @@ def application(user_data):
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
 
+    os.system('cls')
+
     # MEMBERSHIPS
     # *******************************
 
@@ -642,6 +661,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # DOCUMENTS (CV)
     # *******************************
@@ -705,6 +726,8 @@ def application(user_data):
     # ACADEMIC HISTORY
 
     school_urls = _get_urls('usc-history')
+
+    os.system('cls')
 
     # HIGH SCHOOL ATTENDED
     # *******************************
@@ -794,6 +817,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # COLLEGE ATTENDED
     # *******************************
@@ -907,6 +932,8 @@ def application(user_data):
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
 
+    os.system('cls')
+
     # GPA ENTRIES
     # *******************************
 
@@ -924,6 +951,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # EDUCATIONAL GAP
     # *******************************
@@ -963,6 +992,8 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
+
+    os.system('cls')
 
     # TESTS
     # *******************************
