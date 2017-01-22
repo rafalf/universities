@@ -241,6 +241,20 @@ def application(user_data):
 
         wait_for_angular()
 
+        # Type of visa ( optional )
+        visa_type = jsn[6]['intended_visa_type']
+        options = _get_text_options("#cas-program-questions-230277>option")
+        if visa_type in options:
+            type_locator = "select#cas-program-questions-230277"
+            el_type = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, type_locator)))
+            select = Select(el_type)
+            select.select_by_visible_text(visa_type)
+            logger.info('Visa type selected : {}'.format(visa_type))
+        else:
+            logger.info('Could not select visa type: {}'.format(visa_type))
+
+        wait_for_angular()
+
         submit_form()
 
     except:
@@ -323,16 +337,20 @@ def application(user_data):
 
             wait_for_angular()
 
-            web_options = ['Beginner','Intermediate','Advanced']
+            web_options = _get_text_options('#personalInfo-otherInfo-languageProficiency-additionalLanguage-proficiencyLevel>option')
+            select_lang = 'Advanced'
             if another_prof in web_options:
-                another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-language"
-                el_prof_another = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
-                select = Select(el_prof_another)
-                select.select_by_visible_text(another_prof)
+                select_lang = another_prof
+            another_prof_locator = "select#personalInfo-otherInfo-languageProficiency-additionalLanguage-proficiencyLevel"
+            el_prof_another = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, another_prof_locator)))
+            select = Select(el_prof_another)
+            select.select_by_visible_text(select_lang)
 
             wait_for_angular()
 
+        disciplined = jsn[5]['Have you ever been disciplined for academic performance']
+        disciplined2 = jsn[5]['Have you ever been disciplined for student conduct violation']
         family_usc = jsn[6]['Did your parents or siblings attend USC?']
         first_to_college = jsn[6]['Are you the first-generation in your family to go to college?']
         employed_usc = jsn[6]['Are your parents or spouse employed at USC?']
@@ -343,6 +361,16 @@ def application(user_data):
         competitive_award = jsn[6]['non-USC fellowship or nationally competitive award?']
 
         radios = []
+        if disciplined.lower() == 'yes':
+            radios.append("div#personalInfo-otherInfo-infractions-academic4-yes>div")
+        elif disciplined.lower() == 'no':
+            radios.append("div#personalInfo-otherInfo-infractions-academic4-no>div")
+
+        if disciplined2.lower() == 'yes':
+            radios.append("div#personalInfo-otherInfo-infractions-academic1-yes>div")
+        elif disciplined2.lower() == 'no':
+            radios.append("div#personalInfo-otherInfo-infractions-academic1-no>div")
+
         if family_usc.lower() == 'yes':
             radios.append("div#cas-program-questions-251727-577861>div")
         elif family_usc.lower() == 'no':
@@ -374,11 +402,17 @@ def application(user_data):
         elif sponsorship.lower() == 'no':
             radios.append("div#cas-program-questions-251737-577897>div")
 
+        # interested in financail assistance
+        radios.append("div#cas-program-questions-251733-577872>div")
+
         # award
         if competitive_award.lower() == 'yes':
             radios.append("div#cas-program-questions-251734-577874>div")
         elif competitive_award.lower() == 'no':
             radios.append("div#cas-program-questions-251734-577875>div")
+
+        # Do you wish to be considered for a graduate fellowship or assistantship
+        radios.append("div#cas-program-questions-251740-577905>div")
 
         for radio in radios:
             WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, radio))).click()
@@ -391,15 +425,14 @@ def application(user_data):
             marital_status = 'Married'
         else:
             marital_status = None
-            if not marital_status:
-                marital_locator = "select#cas-program-questions-251726"
-                el_marital = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, marital_locator)))
-                select = Select(el_marital)
-                select.select_by_visible_text(marital_status)
 
+        if marital_status:
+            marital_locator = "select#cas-program-questions-251726"
+            el_marital = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, marital_locator)))
+            select = Select(el_marital)
+            select.select_by_visible_text(marital_status)
 
         submit_form()
-
 
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
@@ -492,11 +525,11 @@ def application(user_data):
 
                 # type
                 visible_text = None
-                if company_type.count('Full'):
+                if company_type.lower().count('full'):
                     visible_text = 'Full time'
-                elif company_type.count('Part'):
+                elif company_type.lower().count('part'):
                     visible_text = 'Part time'
-                elif company_type.count('Temp'):
+                elif company_type.lower().count('temp'):
                     visible_text = 'Temporary'
 
                 if visible_text:
@@ -507,6 +540,11 @@ def application(user_data):
                     wait_for_angular()
                 else:
                     logger.info('Status not provided')
+
+                # hours
+                el_name = driver.find_element_by_css_selector("[name='averageWeeklyHours']")
+                el_name.clear()
+                el_name.send_keys('40')
         else:
             logger.info('I am not adding any experience. Opt out')
 
@@ -685,6 +723,7 @@ def application(user_data):
             high_school.append(jsn[0]['univ_state_1'])
             high_school.append(jsn[0]['univ_name_1'])
             high_school.append(jsn[0]['univ_city_1'])
+            high_school.append(jsn[0]['univ_1_graduation_date'])
             highs.append(high_school)
         if jsn[0]['univ_2_degree']:
             high_school = []
@@ -692,6 +731,7 @@ def application(user_data):
             high_school.append(jsn[0]['univ_state_2'])
             high_school.append(jsn[0]['univ_name_2'])
             high_school.append(jsn[0]['univ_city_2'])
+            high_school.append(jsn[0]['univ_2_graduation_date'])
             highs.append(high_school)
         if jsn[0]['univ_3_degree']:
             high_school = []
@@ -699,6 +739,7 @@ def application(user_data):
             high_school.append(jsn[0]['univ_state_3'])
             high_school.append(jsn[0]['univ_name_3'])
             high_school.append(jsn[0]['univ_city_3'])
+            high_school.append(jsn[0]['univ_3_graduation_date'])
             highs.append(high_school)
 
         if _wait_for_element('.cas-opted-out-background', 1) > 0:
@@ -708,7 +749,9 @@ def application(user_data):
             logger.info('Found the following high schools: {}'.format(h))
 
         if len(highs) > 0:
+
             for h in highs:
+
                 raw_input('Please click on Add high schools. We\'ll add high schools now ... \n'
                           'press ENTER when you are on the actual form: \'Add Your High School\'')
 
@@ -720,7 +763,31 @@ def application(user_data):
 
                 driver.find_element_by_css_selector('[name="city"]').send_keys(h[3])
 
-                raw_input('Please fill the remaining fields and click on the Save this school button')
+                wait_for_angular()
+
+                # always graduate
+                el = driver.find_element_by_css_selector('#academicHistory-highSchoolAttended-highSchool-graduated-yes')
+                el.click()
+                wait_for_angular()
+
+                split_date = h[4].split('-')
+                month_ = split_date[1]
+                month = _convert_month(month_)
+                year = split_date[0]
+
+                month_sel = 'select#academicHistory-highSchoolAttended-highSchool-graduationDate-month'
+                el_month = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, month_sel)))
+                select = Select(el_month)
+                select.select_by_visible_text(month)
+                wait_for_angular()
+
+                year_sel = 'select#academicHistory-highSchoolAttended-highSchool-graduationDate-year'
+                el_year = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, year_sel)))
+                select = Select(el_year)
+                select.select_by_visible_text(year)
+                wait_for_angular()
+
+                raw_input('Please fill the remaining fields and click on the Save This School button')
 
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
@@ -739,8 +806,10 @@ def application(user_data):
         wait_for_angular()
 
         if jsn[0]['school_name']:
-            logger.info('Found the following school: name: {}, country: {}, city: {}, graduation date: {}'.
-                        format(jsn[0]['school_name'], jsn[0]['school_country'], jsn[0]['school_city'], jsn[0]['school_grad_date']))
+            logger.info('Found the following school: \nName: {} \nCountry: {} \nCity: {} \nGraduation date: {} \
+                        \nStart date: {} \nEnd date: {}'.format(
+                        jsn[0]['school_name'], jsn[0]['school_country'], jsn[0]['school_city'],
+                        jsn[0]['school_grad_date'], jsn[0]['school_date_from'], jsn[0]['school_date_to']))
 
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((
             By.CSS_SELECTOR, '.cas-primary-button-large-add'))).click()
@@ -751,6 +820,85 @@ def application(user_data):
             By.CSS_SELECTOR, 'input[name="name"]')))
         el.send_keys(jsn[0]['school_name'])
 
+        wait_for_angular()
+
+        first_suggested = '.cas-college-suggestions-list>li:nth-of-type(1)'
+        suggested_element = _wait_for_clickable(first_suggested, 5)
+        if suggested_element:
+            suggested_element.click()
+            wait_for_angular()
+
+            if jsn[0]['school_grad_date']:
+                # graduated (Did you obtain a degree from this college?)
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR, 'div#academicHistory-collegesAttended-college-degreeObtained-yes'))).click()
+            else:
+                # in progress
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+                    By.CSS_SELECTOR, 'div#academicHistory-collegesAttended-college-degreeObtained-inProgress'))).click()
+
+            wait_for_angular()
+
+            # graduate
+            split_date = jsn[0]['school_grad_date'].split('-')
+            grad_month = _convert_month(split_date[1])
+            grad_year = split_date[0]
+
+            month_sel = 'select#academicHistory-collegesAttended-college-graduated-degreeDate-month'
+            el_month = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, month_sel)))
+            select = Select(el_month)
+            select.select_by_visible_text(grad_month)
+            wait_for_angular()
+
+            year_sel = 'select#academicHistory-collegesAttended-college-graduated-degreeDate-year'
+            el_year = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, year_sel)))
+            select = Select(el_year)
+            select.select_by_visible_text(grad_year)
+            wait_for_angular()
+
+            # Semester
+            WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+                By.CSS_SELECTOR, '[label="Semester"]'))).click()
+            wait_for_angular()
+
+            # First Semester
+
+            # start date
+            split_date = jsn[0]['school_date_from'].split('-')
+            start_month = _convert_month(split_date[1])
+            start_year = split_date[0]
+
+            month_sel = 'select#academicHistory-collegesAttended-college-degreeDate-termStart-month'
+            el_month = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, month_sel)))
+            select = Select(el_month)
+            select.select_by_visible_text(start_month)
+            wait_for_angular()
+
+            year_sel = 'select#academicHistory-collegesAttended-college-degreeDate-termStart-year'
+            el_year = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, year_sel)))
+            select = Select(el_year)
+            select.select_by_visible_text(start_year)
+            wait_for_angular()
+
+            # Last Semester
+
+            # end date
+            split_date = jsn[0]['school_date_to'].split('-')
+            end_month = _convert_month(split_date[1])
+            end_year = split_date[0]
+
+            month_sel = 'select#academicHistory-collegesAttended-college-degreeDate-termEnd-month'
+            el_month = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, month_sel)))
+            select = Select(el_month)
+            select.select_by_visible_text(end_month)
+            wait_for_angular()
+
+            year_sel = 'select#academicHistory-collegesAttended-college-degreeDate-termEnd-year'
+            el_year = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, year_sel)))
+            select = Select(el_year)
+            select.select_by_visible_text(end_year)
+            wait_for_angular()
+
         raw_input("Please help me fill out this form ... and click Save this College\n"
                   "Press ENTER when you are ready to move to the next form")
     except:
@@ -758,7 +906,6 @@ def application(user_data):
         raw_input("Please manually fill out this form and submit it."
                   "\nMake sure when the form is submitted you close the successful message"
                   "\nThen press ENTER to continue on with other forms")
-
 
     # GPA ENTRIES
     # *******************************
@@ -827,7 +974,7 @@ def application(user_data):
 
         wait_for_angular()
 
-        logger.info("Please add the following tests:")
+        logger.info("Tefl and IELTS:")
         if jsn[4]['toefl_date']:
             logger.info('Tefl: Speaking score: {}'.format(jsn[4]['toefl_speaking_score']))
             logger.info('Tefl: Total score: {}'.format(jsn[4]['toefl_total_score']))
@@ -842,32 +989,67 @@ def application(user_data):
             logger.info('Ielts: Reading score: {}'.format(jsn[4]['ielts_reading_score']))
             logger.info('Ielts: Date: {}'.format(jsn[4]['ielts_date']))
 
-        raw_input("Please ENTER to print all data relevant to tests: \n")
+        logger.info("All tests data: \n")
 
         ielts_items  = _group_relevant_items(jsn[4], 'ielts')
         for key, value in ielts_items.iteritems():
-            logger.info('Key: {}, Value: {}'.format(key, value))
+            logger.info('key: {} value: {}'.format(key, value))
 
-        ielts_items = _group_relevant_items(jsn[4], 'ielts')
+        if jsn[4]['toefl_date']:
 
-            # Cannot enter ! Red light flashes !
-            # button = 'ul li:nth-of-type(5) button'
-            #
-            # if _wait_for_element(button, 1):
-            #
-            #     WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, button))).click()
-            #     wait_for_angular
-            #     toefl_date = _parse_date(jsn[4]['toefl_date'])
-            #
-            #     input_date = 'input#academicHistory-standardizedtests-addToeflTest-no-dateTaken'
-            #     el = WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, input_date)))
-            #     el.send_keys(toefl_date)
-            #
-            #     save = '.cas-primary-button-large-check'
-            #     WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, save))).click()
-            #     logger.info('Tefl added')
-            # else:
-            #     logger.info('Tefl already added (?)')
+            logger.info("Adding TOEFL")
+            button = 'ul li:nth-of-type(5) button'
+
+            if _wait_for_element(button, 1):
+
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, button))).click()
+                wait_for_angular()
+                toefl_date = _parse_date(jsn[4]['toefl_date'])
+
+                taken = 'div#academicHistory-standardizedtests-addToeflTest-takenTest-yes>div'
+                WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, taken))).click()
+                wait_for_angular()
+
+                paper_test = 'select#academicHistory-standardizedtests-toefltest-testTaken'
+                el_test = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, paper_test)))
+                select = Select(el_test)
+                select.select_by_visible_text('Paper-based')
+                wait_for_angular()
+
+                css = '[name="readingScorePBT"]'
+                reading = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+                reading.send_keys(jsn[4]['toefl_reading_score'])
+
+                css = '[name="totalScorePBT"]'
+                total = WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+                total.send_keys(jsn[4]['toefl_total_score'])
+
+                css = '[name="testOfWrittenEnglishScorePBT"]'
+                reading = WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, css)))
+                reading.send_keys(jsn[4]['toefl_writing_score'])
+
+                raw_input("Please select date: {} and press Save This Test to continue".format(toefl_date))
+            else:
+                logger.info('Tefl already added (?)')
+
+        elif jsn[4]['ielts_date']:
+
+            logger.info("Adding IELTS")
+            button = 'ul li:nth-of-type(4) button'
+
+            if _wait_for_element(button, 1):
+
+                WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, button))).click()
+                wait_for_angular()
+                ielts_date = _parse_date(jsn[4]['ielts_date'])
+
+                taken = 'div#academicHistory-standardizedtests-addAllTest-yes>div'
+                WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, taken))).click()
+                wait_for_angular()
+
+                raw_input("Please select date: {} and press Save This Test to continue".format(ielts_date))
+            else:
+                logger.info('Tefl already added (?)')
 
     except:
         logger.info('an error happened when filling this form.', exc_info=debug)
@@ -917,8 +1099,7 @@ def submit_form(button='submit'):
 
 def set_logger():
 
-    log_file = os.path.join(root_path, 'logs',
-                                time.strftime('%d%m%y%H%M', time.localtime()) + ".log")
+    log_file = os.path.join(parse, "output.log")
     file_hndlr = logging.FileHandler(log_file)
     logger.addHandler(file_hndlr)
     console = logging.StreamHandler(stream=sys.stdout)
@@ -927,6 +1108,11 @@ def set_logger():
     console.setFormatter(ch)
     file_hndlr.setFormatter(ch)
     logger.setLevel(logging.getLevelName('DEBUG'))
+
+
+def _convert_month(month):
+    m_ = time.strptime(month, '%m')
+    return time.strftime('%B', m_)
 
 
 def _parse_date(date_):
@@ -944,6 +1130,15 @@ def _group_relevant_items(section, group_by):
     return r
 
 
+def _get_text_options(selector):
+
+    try:
+        els =  WebDriverWait(driver, 5).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)))
+        return [el.text for el in els]
+    except:
+        logger.warning('Options not found. This might be an issue with selector ... ')
+
+
 def _get_urls(school):
     with open(os.path.join(root_path, 'urls.csv'), 'rb') as hlr:
         rd = csv.reader(hlr, delimiter=',', quotechar='"')
@@ -958,6 +1153,13 @@ def _load_json(file_):
 def _wait_for_element(el, time_=5):
     try:
         return WebDriverWait(driver, time_).until(EC.presence_of_element_located((By.CSS_SELECTOR, el)))
+    except:
+        logger.info('Element {} not present.'.format(el))
+
+
+def _wait_for_clickable(el, time_=5):
+    try:
+        return WebDriverWait(driver, time_).until(EC.element_to_be_clickable((By.CSS_SELECTOR, el)))
     except:
         logger.info('Element {} not present.'.format(el))
 
